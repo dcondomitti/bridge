@@ -5,17 +5,17 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"path"
 	"strings"
 
 	"github.com/coreos/go-etcd/etcd"
 )
 
 func extractData(n *etcd.Node) (string, string) {
-	key := n.Key
+	key := path.Base(n.Key)
 	value := n.Value
 
-	tokens := strings.Split(key, "/")
-	return tokens[len(tokens)-1], value
+	return key, value
 }
 
 func parseCommand(cmd []string) (string, []string) {
