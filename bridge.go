@@ -11,27 +11,13 @@ import (
 	"github.com/coreos/go-etcd/etcd"
 )
 
-func extractData(n *etcd.Node) (string, string) {
-	key := path.Base(n.Key)
-	value := n.Value
-
-	return key, value
-}
-
 func parseCommand(cmd []string) (string, []string) {
 	return cmd[0], cmd[1:]
 }
 
-func setEnvVars(etcdHost string, path string, debug bool) {
-	client := etcd.NewClient([]string{etcdHost})
-	resp, err := client.Get(path, false, false)
+func setEnvVars(vars map[string]string, debug bool) {
 
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	for _, n := range resp.Node.Nodes {
-		key, value := extractData(n)
+	for key, value := range vars {
 		if debug {
 			log.Printf("Exporting %s as %s\n", key, value)
 		} else {
@@ -41,6 +27,27 @@ func setEnvVars(etcdHost string, path string, debug bool) {
 		os.Setenv(key, value)
 	}
 
+}
+
+func etcdClient(etcdHost string) *etcd.Client {
+	return etcd.NewClient([]string{etcdHost})
+}
+
+func retrieveVars(c *etcd.Client, p string) map[string]string {
+	resp, err := c.Get(p, false, false)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	vars := make(map[string]string)
+
+	for _, n := range resp.Node.Nodes {
+		key, value := path.Base(n.Key), n.Value
+		vars[key] = value
+	}
+
+	return vars
 }
 
 func main() {
@@ -63,7 +70,8 @@ func main() {
 
 	log.Printf("Application path: %s, etcd endpoint %s", path, etcdHost)
 
-	setEnvVars(etcdHost, path, debug)
+	vars := retrieveVars(etcdClient(etcdHost), path)
+	setEnvVars(vars, debug)
 
 	log.Printf("Executing %s %s", binary, strings.Join(params, " "))
 	cmd := exec.Command(binary, params...)
