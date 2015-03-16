@@ -50,6 +50,13 @@ func retrieveVars(c *etcd.Client, p string) map[string]string {
 	return vars
 }
 
+func executeCommand(binary string, params []string) {
+	cmd := exec.Command(binary, params...)
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	cmd.Run()
+}
+
 func main() {
 	var path string
 	var etcdHost string
@@ -74,8 +81,5 @@ func main() {
 	setEnvVars(vars, debug)
 
 	log.Printf("Executing %s %s", binary, strings.Join(params, " "))
-	cmd := exec.Command(binary, params...)
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	cmd.Run()
+	executeCommand(binary, params)
 }
