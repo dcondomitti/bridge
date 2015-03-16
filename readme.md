@@ -1,8 +1,16 @@
 ## Bridge
 
-Exports environment configuration variables from etcd to applications.
+Configures and executes applications that expect environment variables from etcd data. 
+
+### Usage
 
 ```
+$ ./bridge -h
+Usage of ./bridge:
+  -debug=false: log environment variable values
+  -etcd_host="http://127.0.0.1:4001": etcd cluster endpoint
+  -path="/example.com/app_name": Path to application variables
+
 $ etcdctl ls /example.com/app/
 /example.com/app/S3_BUCKET
 
@@ -16,3 +24,5 @@ $ go run bridge.go -debug -path=/example.com/app /bin/bash -c 'echo starting && 
 starting
 app.example.com
 ```
+
+Store your configuration under /example.com/application_name/VAR_NAME and it will be exported to the child process.
