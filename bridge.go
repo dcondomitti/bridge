@@ -33,11 +33,11 @@ func etcdClient(etcdHost string) *etcd.Client {
 	return etcd.NewClient([]string{etcdHost})
 }
 
-func retrieveVars(c *etcd.Client, p string) map[string]string {
+func retrieveVars(c *etcd.Client, p string) (map[string]string, error) {
 	resp, err := c.Get(p, false, false)
 
 	if err != nil {
-		log.Fatal(err)
+		return nil, err
 	}
 
 	vars := make(map[string]string)
@@ -47,7 +47,7 @@ func retrieveVars(c *etcd.Client, p string) map[string]string {
 		vars[key] = value
 	}
 
-	return vars
+	return vars, nil
 }
 
 func executeCommand(binary string, params []string) {
@@ -77,8 +77,12 @@ func main() {
 
 	log.Printf("Application path: %s, etcd endpoint %s", path, etcdHost)
 
-	vars := retrieveVars(etcdClient(etcdHost), path)
-	setEnvVars(vars, debug)
+	vars, err := retrieveVars(etcdClient(etcdHost), path)
+	if err != nil {
+		log.Println("etcd not available, skipping configuration and launching command...")
+	} else {
+		setEnvVars(vars, debug)
+	}
 
 	log.Printf("Executing %s %s", binary, strings.Join(params, " "))
 	executeCommand(binary, params)
